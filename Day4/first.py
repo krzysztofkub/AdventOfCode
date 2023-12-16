@@ -1,5 +1,3 @@
-import dataclasses
-
 from input_reader import read_file
 
 

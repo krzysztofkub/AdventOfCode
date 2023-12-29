@@ -1,7 +1,7 @@
 from Day5.classes import Mappers, Mapper
 from input_reader import read_file
 
-lines = read_file("test.txt")
+lines = read_file("input.txt")
 
 
 def to_mapper(lines):
@@ -41,22 +41,13 @@ def get_number(type_mappers, input):
 
 
 def calculate_min_location(seed, mappers):
-    print(f'seed {seed} ========')
     soil_number = get_number(mappers.seed_to_soil, seed)
-    print(f'soil_number : {soil_number}')
     fertilizer_number = get_number(mappers.soil_to_fertilizer, soil_number)
-    print(f'fertilizer_number : {fertilizer_number}')
     water_number = get_number(mappers.fertilizer_to_water, fertilizer_number)
-    print(f'water_number : {water_number}')
     light_number = get_number(mappers.water_to_light, water_number)
-    print(f'light_number : {light_number}')
     temperature_number = get_number(mappers.light_to_temperature, light_number)
-    print(f'temperature_number : {temperature_number}')
     humidity_number = get_number(mappers.temperature_to_humidity, temperature_number)
-    print(f'humidity_number : {humidity_number}')
     location_number = get_number(mappers.humidity_to_location, humidity_number)
-    print(f'location_number : {location_number}')
-    print()
     return location_number
 
 

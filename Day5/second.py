@@ -1,7 +1,10 @@
-from Day5.classes import Mappers, Mapper, Number_Range
+import sys
+
+sys.path.append('C:/Users/Admin/PycharmProjects/AdventOfCode')
+from classes import Mappers, Mapper, Number_Range
 from input_reader import read_file
 
-lines = read_file("test.txt")
+lines = read_file("input.txt")
 
 
 def to_mapper(lines):
@@ -27,44 +30,52 @@ def to_mapper(lines):
     return mappers
 
 
-def get_seeds(line):
+def get_seeds_ranges(line):
     seeds = []
     numbers = line.split("seeds: ")[1].split(" ")
     for index, number in enumerate(numbers):
         number = int(number.strip())
         if index % 2 == 0:
-            seeds.append(Number_Range(number, int(numbers[index + 1].strip())))
-
+            seeds.append(Number_Range(number, number + int(numbers[index + 1].strip()) - 1))
     return seeds
 
 
-def get_range(type_mappers, input_range):
-    for mapper in type_mappers:
-        destination = mapper.get_destination_range(input_range)
-        if destination is not None:
-            return destination
-    return input_range
+def get_destination_ranges(type_mappers, input: [Number_Range]):
+    ranges = []
+    for input_range in input:
+        for mapper in type_mappers:
+            destination_range = mapper.get_destination_range(input_range)
+            if destination_range is not None:
+                ranges.append(destination_range)
+
+        ranges_without_mappers = input_range.get_ranges_without_mappers()
+        if ranges_without_mappers:
+            ranges.extend(ranges_without_mappers)
+        input_range.checked_against = []
+    return ranges
 
 
-def calculate_min_location(seed_range, mappers):
-    soil_range = get_range(mappers.seed_to_soil, seed_range)
-    fertilizer_range = get_range(mappers.soil_to_fertilizer, soil_range)
-    water_range = get_range(mappers.fertilizer_to_water, fertilizer_range)
-    light_range = get_range(mappers.water_to_light, water_range)
-    temperature_range = get_range(mappers.light_to_temperature, light_range)
-    humidity_range = get_range(mappers.temperature_to_humidity, temperature_range)
-    location_range = get_range(mappers.humidity_to_location, humidity_range)
-    return location_range.start
+def calculate_location_range(seed, mappers):
+    soil_number = get_destination_ranges(mappers.seed_to_soil, [seed])
+    fertilizer_number = get_destination_ranges(mappers.soil_to_fertilizer, soil_number)
+    water_number = get_destination_ranges(mappers.fertilizer_to_water, fertilizer_number)
+    light_number = get_destination_ranges(mappers.water_to_light, water_number)
+    temperature_number = get_destination_ranges(mappers.light_to_temperature, light_number)
+    humidity_number = get_destination_ranges(mappers.temperature_to_humidity, temperature_number)
+    location_number = get_destination_ranges(mappers.humidity_to_location, humidity_number)
+    return location_number
 
 
 def process(lines):
-    seeds_ranges = get_seeds(lines[0])
+    seeds_ranges = get_seeds_ranges(lines[0])
     mappers = to_mapper(lines)
-    all_seeds_min_locations = []
-    for seeds_range in seeds_ranges:
-        min_location = calculate_min_location(seeds_range, mappers)
-        all_seeds_min_locations.append(min_location)
-    return min(all_seeds_min_locations)
+    min_location = None
+    for seed_range in seeds_ranges:
+        location_ranges = calculate_location_range(seed_range, mappers)
+        temp_min_location = min(location_ranges, key=lambda x: x.start).start
 
+        if min_location is None or temp_min_location < min_location:
+            min_location = temp_min_location
+    return min_location
 
 print(process(lines))

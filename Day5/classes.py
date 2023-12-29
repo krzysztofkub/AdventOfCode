@@ -1,50 +1,72 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List
 
 
 @dataclass
 class Number_Range:
     start: int
-    input_range: int
+    end: int
+    checked_against: List['Number_Range'] = field(default_factory=list)
+
+    def __str__(self):
+        return f"({self.start}, {self.end})"
+
+    def get_ranges_without_mappers(self):
+        sorted_ranges = sorted(self.checked_against, key=lambda r: r.start)
+
+        missing_ranges = []
+        current_start = self.start
+
+        for range in sorted_ranges:
+            # Check if there is a gap before the start of the current range
+            if range.start > current_start:
+                missing_ranges.append(Number_Range(current_start, range.start - 1))
+
+            # Update the current start to the end of the current range, if it's within the main range
+            current_start = max(current_start, range.end + 1)
+
+        # Check for any remaining range after the last checked range
+        if current_start <= self.end:
+            missing_ranges.append(Number_Range(current_start, self.end))
+
+        return missing_ranges
 
 
-@dataclass
 class Mapper:
-    source_start: int
-    destination_start: int
-    mapping_range: int
+
+    def __init__(self, source_start, destination_start, mapping_range):
+        self.source_range = Number_Range(source_start, source_start + mapping_range - 1)
+        self.vector = source_start - destination_start
 
     def get_destination(self, input):
-        if input in range(self.source_start, self.mapping_range + self.source_start):
-            return self.destination_start + input - self.source_start
+        if self.source_range.start <= input <= self.source_range.end:
+            return input - self.vector
         return None
 
     def get_common_range(self, range: Number_Range):
-        source_end = self.source_start + self.mapping_range - 1
-        range_end = range.start + range.input_range - 1
-
-        if range.start > source_end or range_end < self.source_start:
+        if range.start > self.source_range.end or range.end < self.source_range.start:
             return None
 
-        if range.start > self.source_start:
+        if range.start > self.source_range.start:
             tmp_common_start = range.start
         else:
-            tmp_common_start = self.source_start
+            tmp_common_start = self.source_range.start
 
-        if range_end > source_end:
-            tmp_common_end = source_end
+        if range.end > self.source_range.end:
+            tmp_common_end = self.source_range.end
         else:
-            tmp_common_end = range_end
-        return Number_Range(tmp_common_start, tmp_common_end - tmp_common_start + 1)
+            tmp_common_end = range.end
+        return Number_Range(tmp_common_start, tmp_common_end)
 
     def get_destination_range(self, range: Number_Range):
+        range.checked_against.append(self.source_range)
         common_range = self.get_common_range(range)
+
         if common_range is None:
             return None
-        vector = self.get_vector()
-        return Number_Range(common_range.start - vector, common_range.input_range)
 
-    def get_vector(self):
-        return self.source_start - self.destination_start
+        destination_range = Number_Range(common_range.start - self.vector, common_range.end - self.vector)
+        return destination_range
 
 
 @dataclass
@@ -63,24 +85,3 @@ class Mappers:
     @classmethod
     def set_value(cls, field_name: str, mappers: [Mapper]):
         setattr(cls, field_name, mappers)
-
-
-def pretty_print(mapper, range_to_check):
-    mapper_arr = [x for x in range(mapper.source_start, mapper.mapping_range + mapper.source_start)]
-    print(f'{mapper_arr} -> destination_start: {mapper.destination_start}')
-
-    range_to_check_arr = [x for x in range(range_to_check.start, range_to_check.input_range + range_to_check.start)]
-    print(range_to_check_arr)
-    print(mapper.get_destination_range(range_to_check))
-    print()
-    print("============================")
-
-
-def test():
-    pretty_print(Mapper(5, 3, 3), Number_Range(4, 2))
-    pretty_print(Mapper(5, 3, 7), Number_Range(4, 4))
-    pretty_print(Mapper(5, 8, 5), Number_Range(5, 5))
-    pretty_print(Mapper(5, 8, 5), Number_Range(2, 2))
-
-
-test()

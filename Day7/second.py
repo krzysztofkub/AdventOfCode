@@ -1,6 +1,8 @@
 from input_reader import read_file
 from collections import Counter
 
+TYPE_INCREMENT = 10000000000
+
 lines = read_file("input.txt")
 cards_hierarchy = "J23456789TQKA"  ##13 elements
 
@@ -29,9 +31,9 @@ class Action:
             char_count = Counter(hand_without_jokers)
             length_of_count = len(char_count)
             biggest_count = max(char_count.values())
-            return (length_of_count * 10000000000) + (biggest_count * -10000000000) - count_card_values(hand)
+            return (length_of_count * TYPE_INCREMENT) + (biggest_count * -TYPE_INCREMENT) - count_card_values(hand)
         biggest_count = max(char_count.values())
-        return (length_of_count * 10000000000) + (biggest_count * -10000000000) - count_card_values(hand) - (10000000000 * Counter(hand).get("J", 0))
+        return (length_of_count * TYPE_INCREMENT) + (biggest_count * -TYPE_INCREMENT) - count_card_values(hand) - (TYPE_INCREMENT * Counter(hand).get("J", 0))
 
     def __repr__(self):
         return f'{self.hand}, order: {self.order}'

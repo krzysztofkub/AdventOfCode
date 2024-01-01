@@ -1,12 +1,5 @@
 from dataclasses import dataclass
-
 from input_reader import read_file
-
-
-@dataclass
-class TraverseVector:
-    x_vector: int
-    y_vector: int
 
 
 @dataclass
@@ -21,7 +14,7 @@ class Tile:
         return False
 
 
-lines = read_file("input.txt")
+lines = read_file("test.txt")
 traverse_vectors = {
     "|": [(0, 1), (0, -1)],
     "-": [(-1, 0), (1, 0)],
@@ -69,7 +62,7 @@ def is_legal_flow(destination_pipe, from_tile):
 def traverse(from_tile, lines, tile_history):
     pipe_tiles = get_adjacent_pipe_tiles(from_tile, lines)
     legal_pipes = [destination_pipe for destination_pipe in pipe_tiles if
-            destination_pipe not in tile_history and is_legal_flow(destination_pipe, from_tile)]
+                   destination_pipe not in tile_history and is_legal_flow(destination_pipe, from_tile)]
     return legal_pipes[0] if legal_pipes else None
 
 

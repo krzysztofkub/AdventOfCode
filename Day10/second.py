@@ -17,6 +17,9 @@ class Tile:
     y: int
     normal_vector: (int, int) = None
 
+    def __hash__(self):
+        return hash((self.x, self.y))
+
     def __eq__(self, other):
         if isinstance(other, Tile):
             return self.x == other.x and self.y == other.y
@@ -24,6 +27,7 @@ class Tile:
 
 
 lines = read_file("test.txt")
+result_file = "result.txt"
 traverse_vectors = {
     "|": [(0, 1), (0, -1)],
     "-": [(-1, 0), (1, 0)],
@@ -34,6 +38,7 @@ traverse_vectors = {
     "S": []
 }
 straight_pipes = ["|", "-"]
+direction_change = {"F": 1, "7": -1, "J": 1, "L": -1}
 max_char_index = 0
 max_line_index = 0
 
@@ -46,6 +51,11 @@ def find_start(lines):
 
 
 def get_tile(x, y, lines):
+    if (y > max_line_index or
+            y < 0 or
+            x > max_char_index or
+            x < 0):
+        return None
     return Tile(lines[y][x], x, y)
 
 
@@ -109,18 +119,58 @@ def add_to_queue(tile, processed_nodes, q):
         q.put(tile)
 
 
+def override_result_file(node):
+    x = node.x
+    y = node.y
+
+    with open(result_file, 'r') as file:
+        result_lines = file.readlines()
+
+    if y < len(result_lines):
+        line = result_lines[y]
+
+        if x < len(line):
+            result_lines[y] = line[:x] + node.value + line[x + 1:]
+        else:
+            print(f"Character position x={x} is out of range in line y={y}.")
+    else:
+        print(f"Line y={y} does not exist in the file.")
+
+    with open(result_file, 'w') as file:
+        file.writelines(result_lines)
+
+
 def worker(q, pipeline_tiles, lines):
     counter = 0
     processed_nodes = []
     while True:
         node = q.get()
+        if node in processed_nodes:
+            if q.qsize() == 0:
+                q.put(None)
+            continue
         if node is None:
-            closed_tiles = len(lines[0]) * len(lines) - len(pipeline_tiles) - counter
+            closed_tiles = len(lines[0]) * len(lines) - counter - 1
             print(f'Closed tiles number: {closed_tiles}')
             break
         counter = process_node(node, q, pipeline_tiles, lines, processed_nodes, counter)
         processed_nodes.append(node)
+        override_result_file(node)
         q.task_done()
+
+
+class TileMissingNormalVector(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(message)
+
+
+def set_normal_vector_based_on_bend_pipe(bent_pipeline_tile, traversed_from_tile):
+    if traversed_from_tile.normal_vector is None:
+        raise TileMissingNormalVector(f"Tile {traversed_from_tile} has missing normal vector")
+    direction_change_val = direction_change[bent_pipeline_tile.value]
+    bent_pipeline_tile.normal_vector = (traversed_from_tile.normal_vector[1] * direction_change_val,
+                                        traversed_from_tile.normal_vector[0] * direction_change_val)
 
 
 def process_pipeline_tile(pipeline_tile, traversed_from_tile, q, processed_nodes, lines, pipeline_tiles):
@@ -128,38 +178,57 @@ def process_pipeline_tile(pipeline_tile, traversed_from_tile, q, processed_nodes
         if traversed_from_tile not in pipeline_tiles:
             pipeline_tile.normal_vector = (
                 traversed_from_tile.x - pipeline_tile.x, traversed_from_tile.y - pipeline_tile.y)
-            for vector in traverse_vectors[pipeline_tile.value]:
-                new_pipeline_tile = get_tile(pipeline_tile.x + vector[0], pipeline_tile.y + vector[1], lines)
-                new_pipeline_tile.normal_vector = pipeline_tile.normal_vector
-                add_to_queue(new_pipeline_tile, processed_nodes, q)
+            add_to_queue(pipeline_tile, processed_nodes, q)
 
-        elif traversed_from_tile.value in straight_pipes:
+        else:
             pipeline_tile.normal_vector = traversed_from_tile.normal_vector
+
             tile_from_normal_vector = get_tile(pipeline_tile.x + pipeline_tile.normal_vector[0],
                                                pipeline_tile.y + pipeline_tile.normal_vector[1], lines)
+
+            if (tile_from_normal_vector is not None
+                    and tile_from_normal_vector not in pipeline_tiles):
+                tile_from_normal_vector.value = "."
+                add_to_queue(tile_from_normal_vector, processed_nodes, q)
+
+            add_to_queue(pipeline_tile, processed_nodes, q)
+
+    elif traversed_from_tile in pipeline_tiles:
+        set_normal_vector_based_on_bend_pipe(pipeline_tile, traversed_from_tile)
+        add_to_queue(pipeline_tile, processed_nodes, q)
+
+        tile_from_normal_vector = get_tile(pipeline_tile.x + pipeline_tile.normal_vector[0],
+                                           pipeline_tile.y + pipeline_tile.normal_vector[1], lines)
+
+        if (tile_from_normal_vector is not None
+                and tile_from_normal_vector not in pipeline_tiles):
+            tile_from_normal_vector.value = "."
             add_to_queue(tile_from_normal_vector, processed_nodes, q)
-
-
-        # else:
-        # 1. calculate normal vector from 90 degree turn
-        # tile_from_normal_vector = get_tile(pipeline_tile.x + pipeline_tile.normal_vector[0],
-        #                                    pipeline_tile.y + pipeline_tile.normal_vector[1], lines)
-        # add_to_queue(tile_from_normal_vector, processed_nodes, q)
-
-
-def set_normal_vector_for_pipeline_tile(new_pipeline_tile, pipeline_tile):
-    if new_pipeline_tile.value in straight_pipes:
-    else:
-        pass
-        # pass vector from straight pipeline to 90degrees one
 
 
 def process_node(node, q, pipeline_tiles, lines, processed_nodes, counter):
     counter += 1
 
-    adjacent_tiles = get_adjacent_tiles(node, lines)
+    if node in pipeline_tiles:
+        # generate next two pipeline tiles
+        adjacent_tiles = [get_tile(node.x + vector[0], node.y + vector[1], lines) for vector in
+                          traverse_vectors[node.value]]
+        if node in straight_pipes:
+            # generate one ground tile
+            ground_tile = get_tile(node.x + node.normal_vector[0], node.y + node.normal_vector[1], lines)
+            if ground_tile is not None:
+                adjacent_tiles.append(ground_tile)
+
+    else:
+        adjacent_tiles = get_adjacent_tiles(node, lines)
+
+    adjacent_tiles = [item for item in adjacent_tiles if item is not None and item not in processed_nodes]
+
     for adjacent_tile in adjacent_tiles:
+        if adjacent_tile.value == 'S':
+            continue
         if adjacent_tile not in pipeline_tiles:
+            adjacent_tile.value = "."
             add_to_queue(adjacent_tile, processed_nodes, q)
         else:
             process_pipeline_tile(adjacent_tile, node, q, processed_nodes, lines, pipeline_tiles)
@@ -169,7 +238,16 @@ def process_node(node, q, pipeline_tiles, lines, processed_nodes, counter):
     return counter
 
 
+def create_result_file(lines):
+    masked_lines = [''.join('*' for _ in string) for string in lines]
+    content_to_write = '\n'.join(masked_lines)
+    with open(result_file, 'w') as file:
+        file.write(content_to_write)
+
+
 def count_points_inside_polygon(pipeline_tiles, lines):
+    create_result_file(lines)
+
     first_outside_node = find_first_outside_tile(pipeline_tiles, lines)
     q = queue.Queue()
     q.put(first_outside_node)
@@ -178,13 +256,11 @@ def count_points_inside_polygon(pipeline_tiles, lines):
     thread.start()
     thread.join()
 
-    return 0
-
 
 def process(lines):
     lines = [line.strip() for line in lines]
     pipeline_tiles = get_pipeline_tiles(lines)
-    return count_points_inside_polygon(pipeline_tiles, lines)
+    count_points_inside_polygon(pipeline_tiles, lines)
 
 
 def get_pipeline_tiles(lines):
@@ -197,4 +273,5 @@ def get_pipeline_tiles(lines):
             tile_history.append(tile)
     return tile_history
 
-# print(process(lines))
+
+print(process(lines))

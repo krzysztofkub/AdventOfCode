@@ -1,6 +1,6 @@
 import queue
 
-from Day10.second import process_pipeline_tile, Tile, get_pipeline_tiles, set_normal_vector_based_on_bend_pipe
+from Day10.second import process_pipeline_tile, Tile, get_pipeline_tiles, set_normal_vector_based_on_bend_pipe_and_return_two_possible_ground_tiles
 from input_reader import read_file
 
 lines = read_file("test.txt")
@@ -28,7 +28,7 @@ assert_process_pipline_tile(Tile("-", 4, 1), Tile("-", 3, 1, (0, -1)),
 
 
 def assert_set_normal_vector_based_on_bend_pipe(pipline_tile, traversed_from_tile, expected_normal_vector):
-    set_normal_vector_based_on_bend_pipe(pipline_tile, traversed_from_tile)
+    set_normal_vector_based_on_bend_pipe_and_return_two_possible_ground_tiles(pipline_tile, traversed_from_tile)
     test_result = expected_normal_vector == pipline_tile.normal_vector
     color = bcolors.OKGREEN if test_result else bcolors.FAIL
     print(f'Test pass: {color}{test_result}{bcolors.ENDC}')
@@ -55,3 +55,18 @@ assert_set_normal_vector_based_on_bend_pipe(Tile("L", 2, 2), Tile("|", 2, 3, (-1
 
 
 
+def override_file():
+    result_file = "result.txt"
+
+    with open(result_file, 'r', encoding='utf-8') as file:
+        result_lines = file.readlines()
+
+    result = []
+    for line in result_lines:
+        line = line.replace("7", "\u2510").replace("L", "\u2514").replace("J", "\u2518").replace("F", "\u250C")
+        result.append(line)
+
+    with open(result_file, 'w', encoding='utf-8') as file:
+        file.writelines("".join(result))
+
+override_file()

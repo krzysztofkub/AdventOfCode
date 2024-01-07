@@ -26,7 +26,7 @@ class Tile:
         return False
 
 
-lines = read_file("test.txt")
+lines = read_file("input.txt")
 result_file = "result.txt"
 traverse_vectors = {
     "|": [(0, 1), (0, -1)],
@@ -165,12 +165,20 @@ class TileMissingNormalVector(Exception):
         super().__init__(message)
 
 
-def set_normal_vector_based_on_bend_pipe(bent_pipeline_tile, traversed_from_tile):
+def set_normal_vector_based_on_bend_pipe_and_return_two_possible_ground_tiles(bent_pipeline_tile, traversed_from_tile):
     if traversed_from_tile.normal_vector is None:
         raise TileMissingNormalVector(f"Tile {traversed_from_tile} has missing normal vector")
     direction_change_val = direction_change[bent_pipeline_tile.value]
     bent_pipeline_tile.normal_vector = (traversed_from_tile.normal_vector[1] * direction_change_val,
                                         traversed_from_tile.normal_vector[0] * direction_change_val)
+
+    tile_from_normal_vector = get_tile(bent_pipeline_tile.x + bent_pipeline_tile.normal_vector[0],
+                                       bent_pipeline_tile.y + bent_pipeline_tile.normal_vector[1], lines)
+
+    tile_from_second_possible_normal_vector = get_tile(
+        bent_pipeline_tile.x + (bent_pipeline_tile.normal_vector[1] * direction_change_val),
+        bent_pipeline_tile.y + (bent_pipeline_tile.normal_vector[0] * direction_change_val), lines)
+    return [tile_from_normal_vector, tile_from_second_possible_normal_vector]
 
 
 def process_pipeline_tile(pipeline_tile, traversed_from_tile, q, processed_nodes, lines, pipeline_tiles):
@@ -194,16 +202,14 @@ def process_pipeline_tile(pipeline_tile, traversed_from_tile, q, processed_nodes
             add_to_queue(pipeline_tile, processed_nodes, q)
 
     elif traversed_from_tile in pipeline_tiles:
-        set_normal_vector_based_on_bend_pipe(pipeline_tile, traversed_from_tile)
+        possible_ground_tiles = set_normal_vector_based_on_bend_pipe_and_return_two_possible_ground_tiles(pipeline_tile, traversed_from_tile)
         add_to_queue(pipeline_tile, processed_nodes, q)
 
-        tile_from_normal_vector = get_tile(pipeline_tile.x + pipeline_tile.normal_vector[0],
-                                           pipeline_tile.y + pipeline_tile.normal_vector[1], lines)
-
-        if (tile_from_normal_vector is not None
-                and tile_from_normal_vector not in pipeline_tiles):
-            tile_from_normal_vector.value = "."
-            add_to_queue(tile_from_normal_vector, processed_nodes, q)
+        for possible_ground_tile in possible_ground_tiles:
+            if (possible_ground_tile is not None
+                    and possible_ground_tile not in pipeline_tiles):
+                possible_ground_tile.value = "."
+                add_to_queue(possible_ground_tile, processed_nodes, q)
 
 
 def process_node(node, q, pipeline_tiles, lines, processed_nodes, counter):

@@ -1,9 +1,9 @@
 import queue
 
 from Day10.second import process_pipeline_tile, Tile, get_pipeline_tiles, set_normal_vector_based_on_bend_pipe_and_return_two_possible_ground_tiles
-from input_reader import read_file
+from input_reader import read_file_lines
 
-lines = read_file("test.txt")
+lines = read_file_lines("test.txt")
 lines = [line.strip() for line in lines]
 
 class bcolors:

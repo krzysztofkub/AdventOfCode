@@ -1,4 +1,4 @@
-from input_reader import read_file
+from input_reader import read_file_lines
 
 
 def count_winnings(line):
@@ -14,4 +14,4 @@ def process(lines):
     return sum(winnings)
 
 
-print(process(read_file("input.txt")))
+print(process(read_file_lines("input.txt")))

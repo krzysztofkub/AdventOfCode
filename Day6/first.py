@@ -1,10 +1,10 @@
 import math
 from dataclasses import dataclass
-from input_reader import read_file
+from input_reader import read_file_lines
 from functools import reduce
 import operator
 
-lines = read_file("input.txt")
+lines = read_file_lines("input.txt")
 
 
 @dataclass

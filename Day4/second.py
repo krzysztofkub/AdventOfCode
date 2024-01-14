@@ -1,4 +1,4 @@
-from input_reader import read_file
+from input_reader import read_file_lines
 
 
 def increment_count():
@@ -24,4 +24,4 @@ def process(lines):
 
 
 COUNT = 0
-process(read_file("test.txt"))
+process(read_file_lines("test.txt"))

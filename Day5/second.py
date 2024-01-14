@@ -2,9 +2,9 @@ import sys
 
 sys.path.append('C:/Users/Admin/PycharmProjects/AdventOfCode')
 from classes import Mappers, Mapper, Number_Range
-from input_reader import read_file
+from input_reader import read_file_lines
 
-lines = read_file("input.txt")
+lines = read_file_lines("input.txt")
 
 
 def to_mapper(lines):

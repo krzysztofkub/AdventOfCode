@@ -1,8 +1,8 @@
 from itertools import groupby
 
-from input_reader import read_file
+from input_reader import read_file_lines
 
-lines = read_file("input.txt")
+lines = read_file_lines("input.txt")
 
 
 def generate_all_permutations(line):

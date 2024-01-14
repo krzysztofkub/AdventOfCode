@@ -1,32 +1,47 @@
-import concurrent.futures
 import time
 from itertools import groupby
 
 from input_reader import read_file_lines
 
-lines = read_file_lines("input.txt")
+lines = read_file_lines("test.txt")
 
 
 def is_valid_so_far(line, damaged_spring_groups):
     line_so_far_processed = line.split("?")[0]
     grouped_hashes = [''.join(group) for char, group in groupby(line_so_far_processed) if char == '#']
+
     if not grouped_hashes:
         return True
-    if line[len(line_so_far_processed)] == "?":
+
+    if len(line_so_far_processed) < len(line) and line[len(line_so_far_processed)] == "?":
         grouped_hashes.pop()
+
     return all(len(h) == d for h, d in zip(grouped_hashes, damaged_spring_groups))
 
 
 def generate_all_permutations(line, unfolded_damaged_spring_groups):
-    if "?" not in line:
-        return [line]
+    stack = [(line, 0)]  # Stack stores tuples of (current string, current index)
+    permutations = []
 
-    if not is_valid_so_far(line, unfolded_damaged_spring_groups):
-        return [line]
+    while stack:
+        current_line, index = stack.pop()
 
-    index = line.index("?")
-    return (generate_all_permutations(line[:index] + "." + line[index + 1:], unfolded_damaged_spring_groups) +
-            generate_all_permutations(line[:index] + "#" + line[index + 1:], unfolded_damaged_spring_groups))
+        # Check for validity early to avoid unnecessary processing
+        if not is_valid_so_far(current_line, unfolded_damaged_spring_groups):
+            continue
+
+        # Find the next question mark to replace, starting from the current index
+        next_question_mark = current_line.find("?", index)
+
+        if next_question_mark == -1:
+            # No more question marks - add to permutations
+            permutations.append(current_line)
+        else:
+            # Push the next states to the stack
+            stack.append((current_line[:next_question_mark] + "." + current_line[next_question_mark + 1:], next_question_mark + 1))
+            stack.append((current_line[:next_question_mark] + "#" + current_line[next_question_mark + 1:], next_question_mark + 1))
+
+    return permutations
 
 
 def is_valid(p, damaged_spring_groups):
@@ -49,18 +64,9 @@ def calc_possible_arrangements(line, damaged_spring_groups):
 
 
 def process(lines):
-    # Function to process each line
-    def process_line(line):
-        item = line.strip().split(" ", 1)
-        return calc_possible_arrangements(item[0], [int(number) for number in item[1].split(",")])
-
-    # Create a ThreadPoolExecutor with 7 workers
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-        # Use map to apply 'process_line' to each line, in parallel
-        results = executor.map(process_line, lines)
-
-    # Sum up the results and return
-    return sum(results)
+    return sum(calc_possible_arrangements(item[0], [int(number) for number in item[1].split(",")])
+               for line in lines
+               for item in [line.strip().split(" ", 1)])
 
 
 start_time = time.time()

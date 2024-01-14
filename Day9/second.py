@@ -1,6 +1,6 @@
-from input_reader import read_file
+from input_reader import read_file_lines
 
-lines = read_file("test.txt")
+lines = read_file_lines("test.txt")
 
 
 def calc_val(numbers):

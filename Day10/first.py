@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from input_reader import read_file
+from input_reader import read_file_lines
 
 
 @dataclass
@@ -14,7 +14,7 @@ class Tile:
         return False
 
 
-lines = read_file("test.txt")
+lines = read_file_lines("test.txt")
 traverse_vectors = {
     "|": [(0, 1), (0, -1)],
     "-": [(-1, 0), (1, 0)],

@@ -2,9 +2,9 @@ from dataclasses import dataclass
 import re
 from math import lcm
 
-from input_reader import read_file
+from input_reader import read_file_lines
 
-lines = read_file("input.txt")
+lines = read_file_lines("input.txt")
 counter = 0
 
 

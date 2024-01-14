@@ -1,9 +1,9 @@
-from input_reader import read_file
+from input_reader import read_file_lines
 from collections import Counter
 
 TYPE_INCREMENT = 10000000000
 
-lines = read_file("input.txt")
+lines = read_file_lines("input.txt")
 cards_hierarchy = "J23456789TQKA"  ##13 elements
 
 

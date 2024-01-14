@@ -1,27 +1,4 @@
-import math
-
 from input_reader import read_file
-
-
-# def find_reflection_index(strings):
-#     strings_last_index = len(strings) - 1
-#     for i in range(strings_last_index, 0, -1):
-#         right = strings[i:strings_last_index + 1]
-#         left = strings[0:i]
-#
-#         if (len(left) >= len(right)):
-#             right_to_compare = right[::-1]
-#             left_to_compare = left[len(left) - len(right): len(left) - len(right) + len(right)]
-#         else:
-#             right_to_compare = right[len(right) - len(left): len(right) - len(left) + len(left)][::-1]
-#             left_to_compare = left
-#
-#         if right_to_compare == left_to_compare:
-#             reflection_index = (i, i + 1)
-#             print(reflection_index)
-#             return reflection_index
-#
-#     return None
 
 
 def find_reflection_index(strings):
